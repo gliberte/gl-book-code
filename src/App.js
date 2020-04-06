@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import mapboxgl from "mapbox-gl";
 import styled from "styled-components";
-import cases_country from "./data/cases_country";
+//import cases_country from "./data/cases_country";
 
 const MapContainer = styled.div`
   width: 100%;
@@ -19,7 +19,7 @@ function App() {
     map.on("load", () => {
       map.addSource("covid-cases-source", {
         type: "geojson",
-        data: cases_country
+        data: `${process.env.REACT_APP_URL_API}/paises`
       });
       map.addLayer({
         id: "covid-cases-layer",
@@ -29,7 +29,7 @@ function App() {
           "circle-color": "red",
           "circle-radius": [
             "step",
-            ["get", "Confirmed"],
+            ["get", "confirmados"],
             3,
             100,
             5,
@@ -51,7 +51,7 @@ function App() {
         type: "symbol",
         source: "covid-cases-source",
         layout: {
-          "text-field": `{Confirmed}`,
+          "text-field": `{confirmados}`,
           "text-offset": [1, -1]
         }
       });
