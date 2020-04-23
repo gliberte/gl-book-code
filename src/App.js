@@ -1,63 +1,114 @@
-import React, { useEffect } from "react";
-import mapboxgl from "mapbox-gl";
+import React, { useState } from "react";
+import ReactMapboxGl, { GeoJSONLayer } from "react-mapbox-gl";
 import styled from "styled-components";
-//import cases_country from "./data/cases_country";
+import Control from "./componentes/Control";
 
-const MapContainer = styled.div`
+const Contenedor = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
   width: 100%;
   height: 100vh;
+  @media screen and (min-width: 700px) {
+    & .seccion1 {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.5);
+      width: 400px;
+      height: 600px;
+      z-index: 1;
+      left: 15%;
+      top: 10%;
+      color: white;
+    }
+  }
 `;
 
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
+const Map = ReactMapboxGl({
+  accessToken: process.env.REACT_APP_MAPBOX_ACCESS_TOKEN
+});
 
 function App() {
-  useEffect(() => {
-    const map = new mapboxgl.Map({
-      container: "map",
-      style: "mapbox://styles/mapbox/streets-v9"
-    });
-    map.on("load", () => {
-      map.addSource("covid-cases-source", {
-        type: "geojson",
-        data: `${process.env.REACT_APP_URL_API}/paises`
-      });
-      map.addLayer({
-        id: "covid-cases-layer",
-        type: "circle",
-        source: "covid-cases-source",
-        paint: {
-          "circle-color": "red",
-          "circle-radius": [
-            "step",
-            ["get", "confirmados"],
-            3,
-            100,
-            5,
-            500,
-            7,
-            1000,
-            9,
-            10000,
-            12,
-            50000,
-            15,
-            80000,
-            20
-          ]
-        }
-      });
-      map.addLayer({
-        id: "covid-cases-layer_text",
-        type: "symbol",
-        source: "covid-cases-source",
-        layout: {
-          "text-field": `{confirmados}`,
-          "text-offset": [1, -1]
-        }
-      });
-    });
-  });
-  return <MapContainer id="map"></MapContainer>;
+  const [map, setMap] = useState(null);
+  const [dataTornadosEstado, setDataTornadosEstado] = useState(null);
+  // const {isLoading,data,error} = useQuery('estados',getDataTornados)
+  // console.log(data)
+  const setTornadosPorEstado = data => {
+    console.log(data);
+
+    setDataTornadosEstado(data);
+  };
+
+  return (
+    <Contenedor>
+      <div className="seccion1">
+        <Control
+          setTornadosPorEstado={setTornadosPorEstado}
+          map={map}
+        ></Control>
+      </div>
+      <div>
+        <Map
+          onStyleLoad={map => {
+            setMap(map);
+          }}
+          style="mapbox://styles/mapbox/streets-v9"
+          containerStyle={{
+            height: "100vh",
+            width: "100%"
+          }}
+          zoom={[4]}
+          center={[-104.4082672, 39.0990156]}
+        >
+          <GeoJSONLayer
+            id="tornados_estados"
+            data={`${process.env.REACT_APP_URL_API}/tornados/estados`}
+            fillPaint={{
+              "fill-color": [
+                "step",
+                ["get", "numtornados"],
+                "#ff8a80",
+                10,
+                "#ff5252",
+                100,
+                "#ff1744",
+                250,
+                "#d50000",
+                500,
+                "#DD2C00"
+              ],
+              "fill-opacity": 0.5
+            }}
+          />
+          <GeoJSONLayer
+            id="tornados-estado"
+            data={dataTornadosEstado}
+            lineLayout={{
+              "line-cap": "round"
+            }}
+            linePaint={{
+              "line-color": "red",
+              "line-blur": 3,
+              "line-width": [
+                "step",
+                ["get", "mag"],
+                1,
+                0,
+                4,
+                2,
+                6,
+                3,
+                8,
+                4,
+                10,
+                5,
+                12
+              ]
+            }}
+          ></GeoJSONLayer>
+        </Map>
+      </div>
+    </Contenedor>
+  );
 }
 
 export default App;
